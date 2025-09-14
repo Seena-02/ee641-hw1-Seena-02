@@ -31,14 +31,11 @@ class ShapeDetectionDataset(Dataset):
 
         self.image_ids = list(self.images.keys())
 
-
-
-        pass
     
     def __len__(self):
         """Return the total number of samples."""
         return len(self.image_ids)
-        pass
+
     
     def __getitem__(self, idx):
         """
@@ -81,6 +78,3 @@ class ShapeDetectionDataset(Dataset):
             image = self.transform(image)
         
         return image, targets
-
-
-        pass
