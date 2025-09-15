@@ -41,7 +41,7 @@ class MultiScaleDetector(nn.Module):
 
             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(64),
-            nn.RelU(inplace=True)
+            nn.ReLU(inplace=True)
         )
 
 
@@ -67,19 +67,19 @@ class MultiScaleDetector(nn.Module):
 
         self.head_scale1 = nn.Sequential(
             nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.ReLU(inlace=True),
+            nn.ReLU(inplace=True),
             nn.Conv2d(128, head_out_channels, kernel_size=1, stride=1, padding=0)
         )
 
         self.head_scale2 = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.ReLU(inlace=True),
+            nn.ReLU(inplace=True),
             nn.Conv2d(256, head_out_channels, kernel_size=1, stride=1, padding=0)
         )
 
         self.head_scale3 = nn.Sequential(
             nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.ReLU(inlace=True),
+            nn.ReLU(inplace=True),
             nn.Conv2d(512, head_out_channels, kernel_size=1, stride=1, padding=0)
         )
     
@@ -95,10 +95,10 @@ class MultiScaleDetector(nn.Module):
             Shape: [batch, num_anchors * (5 + num_classes), H, W]
             where 5 = 4 bbox coords + 1 objectness score
         """
-        x.self.stem(x)
-        feat_s1 = self.block(x)
-        feat_s2 = self.block2(feat_s1)
-        feat_s3 = self.block3(feat_s2)
+        x = self.stem(x)
+        feat_s1 = self.block2(x)
+        feat_s2 = self.block3(feat_s1)
+        feat_s3 = self.block4(feat_s2)
 
         pred_s1 = self.head_scale1(feat_s1)
         pred_s2 = self.head_scale2(feat_s2)

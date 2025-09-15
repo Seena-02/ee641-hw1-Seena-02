@@ -4,6 +4,8 @@ from PIL import Image
 import json
 import os
 
+
+
 class ShapeDetectionDataset(Dataset):
     def __init__(self, image_dir, annotation_file, transform=None):
         """
@@ -50,8 +52,8 @@ class ShapeDetectionDataset(Dataset):
 
         # Get image id from the specified index.
         img_id = self.image_ids[idx]
-
-        img_path = os.path.join(self.image_dir, self.image_ids[img_id])
+        img_filename = self.images[img_id]
+        img_path = os.path.join(self.image_dir, img_filename)
         image = Image.open(img_path).convert("RGB")
 
         # Load the annoations
