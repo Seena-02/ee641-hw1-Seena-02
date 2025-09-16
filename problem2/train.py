@@ -31,7 +31,10 @@ def train_heatmap_model(model, train_loader, val_loader, num_epochs=30, device="
 
             optimizer.zero_grad()
             outputs = model(imgs)
+            if outputs.shape[2:] != targets.shape[2:]:
+                outputs = nn.functional.interpolate(outputs, size=targets.shape[2:], mode='bilinear', align_corners=False)
             loss = criterion(outputs, targets)
+
             loss.backward()
             optimizer.step()
 
@@ -45,8 +48,12 @@ def train_heatmap_model(model, train_loader, val_loader, num_epochs=30, device="
         with torch.no_grad():
             for imgs, targets in val_loader:
                 imgs, targets = imgs.to(device), targets.to(device)
+
                 outputs = model(imgs)
+                if outputs.shape[2:] != targets.shape[2:]:
+                    outputs = nn.functional.interpolate(outputs, size=targets.shape[2:], mode='bilinear', align_corners=False)
                 loss = criterion(outputs, targets)
+
                 val_loss += loss.item() * imgs.size(0)
 
         val_loss /= len(val_loader.dataset)
@@ -143,7 +150,7 @@ def main():
     Loads real dataset and trains both Heatmap and Regression models.
     Saves models and logs under ./results/
     """
-    from baseline import analyze_failure_cases  # import here instead of top level
+    from baseline import analyze_failure_cases, ablation_study  # import here instead of top level
     # Get path to the directory containing this script
     base_dir = os.getcwd()
     results_dir = os.path.join(base_dir, "results")
@@ -191,10 +198,10 @@ def main():
 
     # Training
     heatmap_log = train_heatmap_model(
-        heatmap_model, train_loader_heatmap, val_loader_heatmap, num_epochs=30
+        heatmap_model, train_loader_heatmap, val_loader_heatmap, num_epochs=1
     )
     regression_log = train_regression_model(
-        regression_model, train_loader_reg, val_loader_reg, num_epochs=30
+        regression_model, train_loader_reg, val_loader_reg, num_epochs=1
     )
 
     # Saving models
@@ -275,6 +282,10 @@ def main():
 
     models = {'heatmap': heatmap_model, 'regression': regression_model}
     analyze_failure_cases(models, val_loader_reg, threshold=0.05, device=device)
+    ablation_results = ablation_study(
+    dataset_path=os.path.join(base_dir, "..", "datasets/keypoints"),
+    model_class=HeatmapNet
+    )
 
 if __name__ == '__main__':
     main()
