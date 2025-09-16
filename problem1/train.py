@@ -131,26 +131,6 @@ def main():
     ]
     anchors = generate_anchors(feature_map_sizes, anchor_scales, image_size=224)
 
-    #for idx, a in enumerate(anchors):
-        #print(f"Anchors for scale {idx}: {a.shape}")
-
-
-    # for epoch in range(num_epochs):
-    #     train_loss = train_epoch(model, train_loader, criterion, optimizer, device, anchors)
-    #     val_loss   = validate(model, val_loader, criterion, device, anchors)
-
-    #     # Run detection visualization on some validation images:
-    #     visualize_detections(model, val_loader, device, anchors)
-
-    #     results["train_loss"].append(train_loss)
-    #     results["val_loss"].append(val_loss)
-
-    #     print(f"Epoch {epoch+1}/{num_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
-
-    #     # Save best model
-    #     if val_loss < best_val_loss:
-    #         best_val_loss = val_loss
-    #         torch.save(model.state_dict(), "results/best_model.pth")
     print("Starting Training...")
     for epoch in range(num_epochs):
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device, anchors)
@@ -200,10 +180,6 @@ def main():
         for i, (image, targets) in enumerate(zip(all_val_images, all_val_targets)):
             image_tensor = image.unsqueeze(0).to(device)  # add batch dim and move to device
             outputs = model(image_tensor)
-
-            # TODO: decode 'outputs' to predictions format:
-            # predictions = [(box1, score1), (box2, score2), ...]
-            # This requires implementing model-specific decoding and thresholding
 
             predictions = []  # Replace with actual decoded predictions
 
