@@ -190,6 +190,8 @@ def main():
                 save_path=f"results/visualizations/validation_image_{i+1}.png"
             )
 
+        from evaluate import analyze_scale_performance
+        analyze_scale_performance(model, val_loader, anchors, device=device)
 
     # Save training log
     with open("results/training_log.json", "w") as f:

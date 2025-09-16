@@ -7,11 +7,6 @@ class DetectionLoss(nn.Module):
     def __init__(self, num_classes=3):
         super().__init__()
         self.num_classes = num_classes
-        
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from utils import match_anchors_to_targets  # assuming this supports batched anchors
 
 class DetectionLoss(nn.Module):
     def __init__(self, num_classes=3):

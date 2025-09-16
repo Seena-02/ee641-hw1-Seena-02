@@ -10,7 +10,6 @@ from model import HeatmapNet, RegressionNet
 from evaluate import extract_keypoints_from_heatmaps, compute_pck, plot_pck_curves, visualize_predictions
 
 
-
 def train_heatmap_model(model, train_loader, val_loader, num_epochs=30, device="cuda" if torch.cuda.is_available() else "cpu"):
     """
     Train the heatmap-based model.
@@ -55,6 +54,29 @@ def train_heatmap_model(model, train_loader, val_loader, num_epochs=30, device="
         # Log
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
+
+        import matplotlib.pyplot as plt
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        results_dir = os.path.join(base_dir, "results", "visualizations")
+        def save_heatmaps(heatmaps, epoch, results_dir):
+            os.makedirs(os.path.join(results_dir, f"heatmaps_epoch_{epoch}"), exist_ok=True)
+            heatmaps = heatmaps.cpu()
+            batch_size, num_kp, H, W = heatmaps.shape
+            for b in range(min(3, batch_size)):  # save max 3 samples
+                for k in range(num_kp):
+                    plt.imshow(heatmaps[b, k], cmap='hot')
+                    plt.axis('off')
+                    fname = os.path.join(results_dir, f"heatmaps_epoch_{epoch}", f"sample{b+1}_kp{k+1}.png")
+                    plt.savefig(fname)
+                    plt.close()
+
+        # Inside train_heatmap_model's epoch loop, after validation loss calc:
+        with torch.no_grad():
+            sample_imgs, _ = next(iter(val_loader))
+            sample_imgs = sample_imgs.to(device)
+            pred_heatmaps = model(sample_imgs)
+            save_heatmaps(pred_heatmaps, epoch+1, results_dir)
+
 
         print(f"[HeatmapNet] Epoch [{epoch+1}/{num_epochs}] | Train: {train_loss:.4f} | Val: {val_loss:.4f}")
 
@@ -121,7 +143,7 @@ def main():
     Loads real dataset and trains both Heatmap and Regression models.
     Saves models and logs under ./results/
     """
-
+    from baseline import analyze_failure_cases  # import here instead of top level
     # Get path to the directory containing this script
     base_dir = os.getcwd()
     results_dir = os.path.join(base_dir, "results")
@@ -236,7 +258,7 @@ def main():
     os.makedirs(os.path.join(results_dir, "visualizations"), exist_ok=True)
 
     # Plot and save PCK curve comparison
-    plot_pck_curves(pck_heatmap, pck_regression, save_path=os.path.join(results_dir, "visualizations," "pck_comparison.png"))
+    plot_pck_curves(pck_heatmap, pck_regression, save_path=os.path.join(results_dir, "visualizations", "pck_comparison.png"))
 
     # Visualize some sample predictions
     num_samples_to_visualize = min(5, images_all.size(0))
@@ -250,6 +272,9 @@ def main():
             gt_keypoints,
             save_path=os.path.join(results_dir, "visualizations", f"sample_prediction_{i+1}.png")
         )
+
+    models = {'heatmap': heatmap_model, 'regression': regression_model}
+    analyze_failure_cases(models, val_loader_reg, threshold=0.05, device=device)
 
 if __name__ == '__main__':
     main()

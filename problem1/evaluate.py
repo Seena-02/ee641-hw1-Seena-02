@@ -4,6 +4,8 @@ import matplotlib.patches as patches
 import os
 from utils import compute_iou
 import numpy as np
+from utils import match_anchors_to_targets
+
 
 # Ensure results directory exists
 os.makedirs("results/visualizations", exist_ok=True)
@@ -118,7 +120,7 @@ def visualize_detections(image, predictions, ground_truths, save_path):
     plt.close()
 
 
-def analyze_scale_performance(model, dataloader, anchors, device="cpu"):
+def analyze_scale_performance(model, dataloader, anchors, device="mps"):
     """
     Analyze which scales detect which object sizes and save plots.
     
@@ -132,9 +134,14 @@ def analyze_scale_performance(model, dataloader, anchors, device="cpu"):
         scale_stats: dict with counts of small, medium, large objects per scale
     """
     # Define size thresholds (in pixels)
+
+    os.makedirs("results/visualizations", exist_ok=True)
+
     scale_stats = {"small": [0]*len(anchors),
                    "medium": [0]*len(anchors),
                    "large": [0]*len(anchors)}
+
+    anchor_coverage = [0] * len(anchors)
 
     size_thresholds = {"small": 32*32, "medium": 96*96}  # area in pixels
 
@@ -167,6 +174,14 @@ def analyze_scale_performance(model, dataloader, anchors, device="cpu"):
                         else:
                             scale_stats['large'][scale_idx] += 1
 
+                    # For anchor coverage, match anchors to GT boxes using provided utils
+                    scale_anchors = anchors[scale_idx].to(device)
+                    matched_labels, matched_boxes, pos_mask, neg_mask = match_anchors_to_targets(
+                        scale_anchors, gt_boxes.to(device), targets[b]['labels'].to(device)
+                    )
+                    # Count positive anchors (coverage)
+                    anchor_coverage[scale_idx] += pos_mask.sum().item()
+
     # Save bar plots per size
     for size, counts in scale_stats.items():
         plt.bar(range(len(counts)), counts)
@@ -174,6 +189,15 @@ def analyze_scale_performance(model, dataloader, anchors, device="cpu"):
         plt.ylabel("Num detections")
         plt.title(f"{size.capitalize()} objects per scale")
         plt.savefig(f"results/visualizations/{size}_scale_coverage.png")
+        print(f"Saved {size} scale coverage plot")
         plt.close()
+
+    # Save anchor coverage plot
+    plt.bar(range(len(anchor_coverage)), anchor_coverage)
+    plt.xlabel("Scale index")
+    plt.ylabel("Number of positive anchors")
+    plt.title("Anchor coverage (positive anchors) per scale")
+    plt.savefig("results/visualizations/anchor_coverage_per_scale.png")
+    plt.close()
 
     return scale_stats
